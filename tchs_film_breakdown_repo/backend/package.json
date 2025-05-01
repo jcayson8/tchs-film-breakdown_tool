@@ -1,5 +1,5 @@
 {
-  "name": "tchs-film-backend",
+  "name": "film-breakdown-backend",
   "version": "1.0.0",
   "main": "server.js",
   "type": "module",
