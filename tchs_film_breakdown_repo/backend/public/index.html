@@ -80,3 +80,127 @@ document.querySelectorAll('.sidebar li').forEach(item=>{
 </script>
 </body>
 </html>
+<!-- backend/public/index.html  (condensed for GitHub editor) -->
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<title>TCHS Football Film Breakdown Tool</title>
+<style>
+:root{--navy:#002147;--orange:#FF6B00;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{display:flex;height:100vh;background:#F6F7FA}
+.sidebar{width:240px;background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;padding-top:20px}
+.sidebar img{height:64px;margin-bottom:40px}
+.sidebar ul{list-style:none;width:100%}
+.sidebar li{padding:15px 22px;cursor:pointer;transition:.2s}
+.sidebar li.active,.sidebar li:hover{background:rgba(255,255,255,.15)}
+.main{flex:1;padding:40px;overflow-y:auto}
+h1{color:var(--navy);margin-bottom:30px;font-size:36px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:24px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08);padding:24px}
+.card h2{font-size:18px;color:var(--navy);margin-bottom:12px}
+.row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:16px}
+.row .v{color:var(--orange);font-weight:600}
+.hidden{display:none}
+.upload-box{border:2px dashed #aaa;padding:60px;text-align:center;border-radius:12px;background:#fff}
+.upload-box.drag{border-color:var(--orange)}
+</style></head><body>
+<aside class="sidebar">
+  <img src="Logo.PNG" alt="TC Bulldogs">
+  <ul>
+    <li class="active" data-tab="upload">Upload Clips</li>
+    <li data-tab="play">Play Table</li>
+    <li data-tab="offense">Offense</li>
+    <li data-tab="defense">Defense</li>
+  </ul>
+</aside>
+
+<main class="main">
+<!-- Upload TAB -->
+<section id="upload">
+ <h1>Upload Clips</h1>
+ <div id="uBox" class="upload-box">
+   <p>Drag &amp; drop MP4 files here<br>or<br><label style="cursor:pointer;color:var(--orange);text-decoration:underline;">
+     <input id="fileInput" type="file" accept=".mp4" multiple hidden> Select Files
+   </label></p>
+   <p id="status"></p>
+ </div>
+</section>
+
+<!-- Play-table placeholder -->
+<section id="play" class="hidden"><h1>Play Table</h1><p>(Data grid appears here after upload)</p></section>
+
+<!-- Offense dashboard -->
+<section id="offense" class="hidden"><h1>Offense</h1>
+ <div class="grid">
+  <div class="card"><h2>Offensive Formation %</h2>
+   <div class="row"><span>Trio Right</span><span class="v">40 %</span></div>
+   <div class="row"><span>Trio Left</span><span class="v">30 %</span></div>
+   <div class="row"><span>Spread</span><span class="v">20 %</span></div>
+   <div class="row"><span>I-Formation</span><span class="v">10 %</span></div></div>
+  <div class="card"><h2>Play Call</h2>
+   <div class="row"><span>Outside Zone</span><span class="v">35 %</span></div>
+   <div class="row"><span>Screen</span><span class="v">30 %</span></div>
+   <div class="row"><span>Four Verts</span><span class="v">25 %</span></div></div>
+  <div class="card"><h2>Play Direction %</h2>
+   <div class="row"><span>Left</span><span class="v">55 %</span></div>
+   <div class="row"><span>Right</span><span class="v">45 %</span></div></div>
+  <div class="card"><h2>Advanced Metrics</h2>
+   <div class="row"><span>Deep Throws</span><span class="v">25 %</span></div>
+   <div class="row"><span>Short Throws</span><span class="v">40 %</span></div>
+   <div class="row"><span>Run %</span><span class="v">35 %</span></div></div>
+  <div class="card"><h2>Completion Rates</h2>
+   <div class="row"><span>Deep Comp %</span><span class="v">68 %</span></div>
+   <div class="row"><span>Short Comp %</span><span class="v">82 %</span></div></div>
+ </div>
+</section>
+
+<!-- Defense dashboard -->
+<section id="defense" class="hidden"><h1>Defense</h1>
+ <div class="grid">
+  <div class="card"><h2>Defense Type %</h2>
+   <div class="row"><span>4-3</span><span class="v">45 %</span></div>
+   <div class="row"><span>3-3</span><span class="v">35 %</span></div>
+   <div class="row"><span>Blitz</span><span class="v">20 %</span></div></div>
+  <div class="card"><h2>Blitz Tendencies</h2>
+   <div class="row"><span>Blitz %</span><span class="v">20 %</span></div></div>
+  <div class="card"><h2>Coverage %</h2>
+   <div class="row"><span>Man</span><span class="v">70 %</span></div>
+   <div class="row"><span>Zone</span><span class="v">30 %</span></div></div>
+  <div class="card"><h2>Advanced Metrics</h2>
+   <div class="row"><span>Primary Man Cov</span><span class="v">70 %</span></div>
+   <div class="row"><span>Primary Zone Cov</span><span class="v">30 %</span></div></div>
+ </div>
+</section>
+</main>
+
+<script>
+/* sidebar switching */
+document.querySelectorAll(".sidebar li").forEach(li=>{
+ li.onclick=()=>{
+  document.querySelectorAll(".sidebar li").forEach(i=>i.classList.remove("active"));
+  li.classList.add("active");
+  const tab=li.dataset.tab;
+  document.querySelectorAll("main>section").forEach(s=>s.classList.add("hidden"));
+  document.getElementById(tab).classList.remove("hidden");
+ }
+});
+
+/* very simple upload demo */
+const box=document.getElementById('uBox');
+const inp=document.getElementById('fileInput');
+const st=document.getElementById('status');
+['dragenter','dragover'].forEach(ev=>box.addEventListener(ev,e=>{e.preventDefault();box.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>box.addEventListener(ev,e=>{e.preventDefault();box.classList.remove('drag')}));
+box.addEventListener('drop',e=>{
+  const files=[...e.dataTransfer.files];
+  handle(files);
+});
+inp.onchange=e=>handle([...inp.files]);
+function handle(files){
+ if(!files.length)return;
+ st.textContent='Uploading '+files[0].name+' …';
+ const fd=new FormData();fd.append('file',files[0]);
+ fetch('/api/upload',{method:'POST',body:fd})
+  .then(r=>r.ok?st.textContent='Upload complete!':st.textContent='Upload failed');
+}
+</script>
+</body></html>
