@@ -1,2 +1,161 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>TCHS Football Film Breakdown Tool</title></head>
-<body><h1>TCHS Football Film Breakdown Tool</h1><p>This is the complete bundle placeholder.</p></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+<title>TCHS Football Film Breakdown Tool</title>
+<style>
+:root{--navy:#002147;--orange:#FF6B00;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{display:flex;height:100vh;background:#F6F7FA}
+.sidebar{width:240px;background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;padding-top:24px}
+.sidebar img{height:64px;margin-bottom:36px}
+.sidebar ul{list-style:none;width:100%}
+.sidebar li{padding:15px 24px;cursor:pointer;transition:.2s}
+.sidebar li.active,.sidebar li:hover{background:rgba(255,255,255,.18)}
+.main{flex:1;padding:40px 48px;overflow-y:auto}
+h1{color:var(--navy);margin-bottom:24px;font-size:34px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:26px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08);padding:24px}
+.card h2{font-size:18px;color:var(--navy);margin-bottom:14px}
+.row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:16px}
+.row .v{color:var(--orange);font-weight:600}
+.hidden{display:none}
+.upload-box{border:2px dashed #bbb;padding:50px;text-align:center;border-radius:12px;background:#fff;cursor:pointer;transition:.2s}
+.upload-box.drag{border-color:var(--orange)}
+.barwrap{height:6px;background:#ddd;border-radius:3px;margin-top:6px;overflow:hidden}
+.bar{height:100%;width:0;background:var(--orange);transition:width .3s}
+.fileRow{margin-top:12px;font-size:14px}
+</style></head><body>
+
+<aside class="sidebar">
+  <img src="Logo.PNG" alt="TC Bulldogs">
+  <ul>
+    <li class="active" data-tab="upload">Upload Clips</li>
+    <li data-tab="play">Play Table</li>
+    <li data-tab="offense">Offense</li>
+    <li data-tab="defense">Defense</li>
+  </ul>
+</aside>
+
+<main class="main">
+<!-- ░░ Upload tab ░░ -->
+<section id="upload">
+ <h1>Upload Clips</h1>
+
+ <label style="font-size:15px;">Team 
+   <select id="teamSel" style="padding:4px 6px;">
+     <option value="default" selected>Default Team</option>
+   </select>
+   <button id="newTeamBtn" style="margin-left:8px;padding:4px 8px;background:var(--orange);color:#fff;border:none;border-radius:4px;cursor:pointer">+ New Team</button>
+ </label>
+
+ <br><br>
+
+ <div id="uBox" class="upload-box">
+   <p>Drag & drop MP4 files here<br>or click to select</p>
+   <input id="fileInput" type="file" accept=".mp4" multiple hidden>
+ </div>
+
+ <div id="queue"></div>
+</section>
+
+<!-- ░░ Play-table placeholder ░░ -->
+<section id="play" class="hidden"><h1>Play Table</h1><p>(Data grid will appear here after processing)</p></section>
+
+<!-- ░░ Offense ░░ -->
+<section id="offense" class="hidden"><h1>Offense</h1>
+ <div class="grid">
+  <div class="card"><h2>Offensive Formation %</h2>
+   <div class="row"><span>Trips Rt</span><span class="v" id="ofTripsRt">—</span></div>
+   <div class="row"><span>Trips Lt</span><span class="v" id="ofTripsLt">—</span></div>
+   <div class="row"><span>Spread</span><span class="v" id="ofSpread">—</span></div>
+   <div class="row"><span>I-Form</span><span class="v" id="ofI">—</span></div></div>
+
+  <div class="card"><h2>Play Call %</h2>
+   <div class="row"><span>Outside Zone</span><span class="v" id="pcOZ">—</span></div>
+   <div class="row"><span>Screen</span><span class="v" id="pcScreen">—</span></div>
+   <div class="row"><span>Four Verts</span><span class="v" id="pcVerts">—</span></div></div>
+
+  <div class="card"><h2>Play Direction %</h2>
+   <div class="row"><span>Left</span><span class="v" id="dirLeft">—</span></div>
+   <div class="row"><span>Right</span><span class="v" id="dirRight">—</span></div></div>
+
+  <div class="card"><h2>Advanced Metrics</h2>
+   <div class="row"><span>Deep Throws</span><span class="v" id="advDeep">—</span></div>
+   <div class="row"><span>Short Throws</span><span class="v" id="advShort">—</span></div>
+   <div class="row"><span>Run %</span><span class="v" id="advRun">—</span></div></div>
+
+  <div class="card"><h2>Completion Rates</h2>
+   <div class="row"><span>Deep Comp %</span><span class="v" id="cmpDeep">—</span></div>
+   <div class="row"><span>Short Comp %</span><span class="v" id="cmpShort">—</span></div></div>
+ </div>
+</section>
+
+<!-- ░░ Defense ░░ -->
+<section id="defense" class="hidden"><h1>Defense</h1>
+ <div class="grid">
+  <div class="card"><h2>Defense Type %</h2>
+   <div class="row"><span>4-3</span><span class="v" id="d43">—</span></div>
+   <div class="row"><span>3-3</span><span class="v" id="d33">—</span></div>
+   <div class="row"><span>Blitz (all downs)</span><span class="v" id="blitzAll">—</span></div></div>
+
+  <div class="card"><h2>Blitz by Down %</h2>
+   <div class="row"><span>1st Down</span><span class="v" id="blitz1">—</span></div>
+   <div class="row"><span>2nd Down</span><span class="v" id="blitz2">—</span></div>
+   <div class="row"><span>3rd Down</span><span class="v" id="blitz3">—</span></div>
+   <div class="row"><span>4th Down</span><span class="v" id="blitz4">—</span></div></div>
+
+  <div class="card"><h2>Coverage %</h2>
+   <div class="row"><span>Man</span><span class="v" id="covMan">—</span></div>
+   <div class="row"><span>Zone</span><span class="v" id="covZone">—</span></div></div>
+ </div>
+</section>
+</main>
+
+<script>
+/* sidebar nav */
+document.querySelectorAll(".sidebar li").forEach(li=>{
+  li.onclick=()=>{
+    document.querySelectorAll(".sidebar li").forEach(i=>i.classList.remove("active"));
+    li.classList.add("active");
+    const tab=li.dataset.tab;
+    document.querySelectorAll("main>section").forEach(s=>s.classList.add("hidden"));
+    document.getElementById(tab).classList.remove("hidden");
+  };
+});
+
+/* simple in-page team list */
+const teamSel=document.getElementById('teamSel');
+document.getElementById('newTeamBtn').onclick=()=>{
+  const name=prompt("Team name?");
+  if(!name) return;
+  const opt=document.createElement('option');
+  opt.textContent=name; opt.value=name;
+  teamSel.appendChild(opt);
+  teamSel.value=name;
+};
+
+/* upload logic */
+const uBox=document.getElementById('uBox');
+const inp=document.getElementById('fileInput');
+const queue=document.getElementById('queue');
+uBox.onclick=()=>inp.click();
+['dragenter','dragover'].forEach(ev=>uBox.addEventListener(ev,e=>{e.preventDefault();uBox.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>uBox.addEventListener(ev,e=>{e.preventDefault();uBox.classList.remove('drag')}));
+uBox.addEventListener('drop',e=>{e.preventDefault();handle([...e.dataTransfer.files])});
+inp.onchange=e=>handle([...inp.files]);
+
+function handle(files){
+  files.forEach(f=>{
+    const row=document.createElement('div');
+    row.className="fileRow";
+    row.innerHTML=`${f.name}<div class="barwrap"><div class="bar"></div></div>`;
+    const bar=row.querySelector('.bar');
+    queue.appendChild(row);
+
+    const fd=new FormData();fd.append('files',f);
+    fetch('/api/upload',{method:'POST',body:fd})
+      .then(r=>{
+        bar.style.width='100%';
+      });
+  });
+}
+</script>
+</body></html>
