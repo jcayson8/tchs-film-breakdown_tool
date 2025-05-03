@@ -11,23 +11,24 @@ import { analyzeClip }   from './analysis.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
+// Initialize Express
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve Static UI
+// Serve static UI from public/
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
-app.get('/*', (_req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
-});
+app.get('/*', (_req, res) =>
+  res.sendFile(path.join(publicDir, 'index.html'))
+);
 
-// Health Check
+// Health check endpoint
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Upload Clips
+// File upload endpoint
 const DATA_DIR = '/data';
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const storage = multer.diskStorage({
@@ -35,40 +36,24 @@ const storage = multer.diskStorage({
   filename:    (_req, file, cb) => cb(null, `${Date.now()}_${file.originalname}`)
 });
 const upload = multer({ storage });
-
 app.post('/api/upload', upload.array('files'), (req, res) => {
   console.log('Uploaded:', req.files.map(f => f.filename));
   res.json({ uploaded: req.files.map(f => f.filename) });
 });
 
-// API: Plays and Metrics will be added later
+// Database client
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  console.error('❌ DATABASE_URL not set');
+  process.exit(1);
+}
+const db = new Client({ connectionString: DATABASE_URL });
 
-// Start Express
-const PORT = parseInt(process.env.PORT, 10) || 8080;
-app.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
-});
-
-// Embedded Watcher & DB Logic
-(async function main() {
-  const DATABASE_URL = process.env.DATABASE_URL;
-  if (!DATABASE_URL) {
-    console.error('❌ No DATABASE_URL set; watcher disabled');
-    return;
-  }
-
-  // Connect to Postgres
-  const db = new Client({ connectionString: DATABASE_URL });
+// Connect & initialize
+(async () => {
   try {
     await db.connect();
     console.log('✅ DB connected');
-  } catch (err) {
-    console.error('❌ DB connection error:', err);
-    return;
-  }
-
-  // Ensure plays table exists
-  try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS plays (
         id                 SERIAL PRIMARY KEY,
@@ -83,45 +68,70 @@ app.listen(PORT, () => {
         run_direction      TEXT     NOT NULL,
         pass_type          TEXT     NOT NULL,
         completed          BOOLEAN  NOT NULL,
-        created_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        created_at         TIMESTAMPTZ DEFAULT NOW()
       );
     `);
     console.log('✅ Ensured plays table exists');
   } catch (err) {
-    console.error('❌ Error creating plays table:', err);
-    return;
+    console.error('❌ DB init error:', err);
+    process.exit(1);
   }
 
-  // List existing clips
-  try {
-    const existing = fs.readdirSync(DATA_DIR);
-    console.log('🔍 Existing files in /data:', existing);
-  } catch (e) {
-    console.error('⚠️ Could not list /data:', e);
-  }
-
-  // Watch for new MP4s
-  const watcher = chokidar.watch(DATA_DIR, {
-    ignoreInitial: true,
-    depth: 0,
-    awaitWriteFinish: { stabilityThreshold: 2000 }
+  // API: fetch all plays
+  app.get('/api/plays', async (_req, res) => {
+    try {
+      const result = await db.query('SELECT * FROM plays ORDER BY id DESC');
+      res.json(result.rows);
+    } catch (err) {
+      console.error('❌ /api/plays error:', err);
+      res.status(500).json({ error: 'Internal error' });
+    }
   });
 
+  // API: aggregated metrics
+  app.get('/api/metrics', async (_req, res) => {
+    try {
+      const formations = await db.query(`
+        SELECT offense_formation AS category,
+               COUNT(*) * 100.0 / SUM(COUNT(*)) OVER() AS pct
+          FROM plays
+         GROUP BY offense_formation
+      `);
+      const defense = await db.query(`
+        SELECT defense_formation AS category,
+               COUNT(*) * 100.0 / SUM(COUNT(*)) OVER() AS pct
+          FROM plays
+         GROUP BY defense_formation
+      `);
+      res.json({
+        formations: formations.rows,
+        defense:    defense.rows
+      });
+    } catch (err) {
+      console.error('❌ /api/metrics error:', err);
+      res.status(500).json({ error: 'Internal error' });
+    }
+  });
+
+  // Watch for new clips
+  const watcher = chokidar.watch(DATA_DIR, {
+    ignoreInitial: true,
+    awaitWriteFinish: { stabilityThreshold: 2000 }
+  });
   watcher.on('add', async filePath => {
     if (!filePath.toLowerCase().endsWith('.mp4')) return;
-    console.log(`▶ Detected new clip: ${filePath}`);
-
+    console.log(`▶ New clip: ${filePath}`);
     try {
       const plays = await analyzeClip(filePath);
       console.log(`↳ Extracted ${plays.length} plays`);
-
       for (const p of plays) {
         await db.query(
           `INSERT INTO plays
-             (team, clip, start_time, end_time, offense_formation,
-              defense_formation, blitz, coverage, run_direction,
+             (team, clip, start_time, end_time,
+              offense_formation, defense_formation,
+              blitz, coverage, run_direction,
               pass_type, completed)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
           [
             p.team,
             path.basename(filePath),
@@ -137,19 +147,19 @@ app.listen(PORT, () => {
           ]
         );
       }
-      console.log(`☑ Wrote ${plays.length} rows to DB`);
-
-      // Move processed clip
-      const doneDir = path.join(DATA_DIR, 'processed');
-      if (!fs.existsSync(doneDir)) fs.mkdirSync(doneDir, { recursive: true });
-      fs.renameSync(filePath, path.join(doneDir, path.basename(filePath)));
-      console.log(`✔ Moved clip to /data/processed`);
+      console.log(`☑ Wrote ${plays.length} rows`);
+      const done = path.join(DATA_DIR, 'processed');
+      if (!fs.existsSync(done)) fs.mkdirSync(done, { recursive: true });
+      fs.renameSync(filePath, path.join(done, path.basename(filePath)));
+      console.log('✔ Moved clip to processed');
     } catch (err) {
       console.error('❌ Processing error:', err);
     }
   });
-
   watcher.on('error', err => console.error('Watcher error:', err));
-
-  console.log(`🎬 Worker watching for new clips in ${DATA_DIR}`);
+  console.log('🎬 Watching /data for new clips');
 })();
+
+// Start server
+const PORT = parseInt(process.env.PORT, 10) || 8080;
+app.listen(PORT, () => console.log(`✅ Server listening on port ${PORT}`));

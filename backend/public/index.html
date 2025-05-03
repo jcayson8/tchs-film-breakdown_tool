@@ -45,7 +45,7 @@
   <main class="main">
     <section id="upload">
       <h1>Upload Clips</h1>
-      <div id="uBox" class="upload-box">Drag &amp; drop MP4 files here or click to select</div>
+      <div id="uBox" class="upload-box">Drag &amp; drop MP4 files or click to select</div>
       <input id="fileInput" type="file" accept=".mp4" multiple hidden/>
       <div id="fileList" class="file-list"></div>
     </section>
@@ -56,13 +56,24 @@
     <section id="offense" class="hidden">
       <h1>Offense</h1>
       <div class="grid">
-        <!-- Offense cards… -->
+        <div class="card">
+          <h2>Offensive Formation %</h2>
+          <div class="row"><span>Spread</span><span class="v" id="ofSpread">—</span></div>
+          <div class="row"><span>I-Formation</span><span class="v" id="ofIForm">—</span></div>
+          <div class="row"><span>Trio Right</span><span class="v" id="ofTrioRt">—</span></div>
+          <div class="row"><span>Trio Left</span><span class="v" id="ofTrioLt">—</span></div>
+        </div>
       </div>
     </section>
     <section id="defense" class="hidden">
       <h1>Defense</h1>
       <div class="grid">
-        <!-- Defense cards… -->
+        <div class="card">
+          <h2>Defensive Formation %</h2>
+          <div class="row"><span>4-3</span><span class="v" id="df43">—</span></div>
+          <div class="row"><span>3-3</span><span class="v" id="df33">—</span></div>
+          <div class="row"><span>Nickel</span><span class="v" id="dfNickel">—</span></div>
+        </div>
       </div>
     </section>
   </main>
@@ -84,13 +95,12 @@
     uBox.onclick = () => fileInput.click();
     ['dragenter','dragover'].forEach(e => uBox.addEventListener(e, ev => { ev.preventDefault(); uBox.classList.add('drag'); }));
     ['dragleave','drop'].forEach(e => uBox.addEventListener(e, ev => { ev.preventDefault(); uBox.classList.remove('drag'); }));
-    uBox.addEventListener('drop', ev => { ev.preventDefault(); handleFiles(ev.dataTransfer.files); });
+    uBox.addEventListener('drop', ev => handleFiles(ev.dataTransfer.files));
     fileInput.addEventListener('change', ev => handleFiles(ev.target.files));
 
     function handleFiles(files) {
       Array.from(files).forEach(file => {
-        const row = document.createElement('div');
-        row.className = 'file-row';
+        const row = document.createElement('div'); row.className='file-row';
         row.innerHTML = `
           <span>${file.name}</span>
           <div class="progress-container">
@@ -99,45 +109,44 @@
         fileList.appendChild(row);
         const bar = row.querySelector('.progress-bar');
         const form = new FormData(); form.append('files', file);
-        fetch('/api/upload', { method:'POST', body: form })
-          .then(r=>r.json())
+        fetch('/api/upload',{ method:'POST', body: form })
+          .then(r => r.json())
           .then(() => {
-            let pct = 0;
-            const iv = setInterval(() => {
-              pct += 10; bar.style.width = pct+'%';
-              if (pct >= 100) clearInterval(iv);
-            }, 300);
+            let pct=0; const iv=setInterval(()=>{
+              pct+=10; bar.style.width=pct+'%';
+              if(pct>=100) clearInterval(iv);
+            },300);
           });
       });
     }
 
     // Load plays
-    async function loadPlays() {
+    async function loadPlays(){
       const res = await fetch('/api/plays');
       const plays = await res.json();
       const table = document.getElementById('playTable');
-      table.innerHTML = `
-        <tr><th>ID</th><th>Team</th><th>Off Form</th><th>Def Form</th>
-        <th>Blitz</th><th>Coverage</th><th>Run Dir</th>
-        <th>Pass</th><th>Comp</th></tr>` +
-        plays.map(p => 
-          `<tr><td>${p.id}</td><td>${p.team}</td>` +
-          `<td>${p.offense_formation}</td><td>${p.defense_formation}</td>` +
-          `<td>${p.blitz}</td><td>${p.coverage}</td>` +
-          `<td>${p.run_direction}</td><td>${p.pass_type}</td>` +
-          `<td>${p.completed}</td></tr>`
-        ).join('');
+      table.innerHTML = '<tr><th>ID</th><th>Team</th><th>Off Form</th><th>Def Form</th><th>Blitz</th><th>Coverage</th><th>Run Dir</th><th>Pass</th><th>Comp</th></tr>'
+        + plays.map(p => `
+          <tr>
+            <td>${p.id}</td><td>${p.team}</td>
+            <td>${p.offense_formation}</td><td>${p.defense_formation}</td>
+            <td>${p.blitz}</td><td>${p.coverage}</td>
+            <td>${p.run_direction}</td><td>${p.pass_type}</td>
+            <td>${p.completed}</td>
+          </tr>`).join('');
     }
 
-    // Load basic metrics (example)
-    async function loadMetrics() {
+    // Load metrics
+    async function loadMetrics(){
       const res = await fetch('/api/metrics');
-      const { formations } = await res.json();
+      const { formations, defense } = await res.json();
       formations.forEach(f => {
-        const idMap = { 'Spread':'ofSpread','I-Formation':'ofIForm',
-          'Trio Right':'ofTrioRt','Trio Left':'ofTrioLt' };
-        const el = document.getElementById(idMap[f.category]);
-        if (el) el.textContent = f.pct.toFixed(1) + '%';
+        const m = { 'Spread':'ofSpread','I-Formation':'ofIForm','Trio Right':'ofTrioRt','Trio Left':'ofTrioLt' };
+        document.getElementById(m[f.category]).textContent = f.pct.toFixed(1) + '%';
+      });
+      defense.forEach(d => {
+        const m = { '4-3':'df43','3-3':'df33','Nickel':'dfNickel' };
+        document.getElementById(m[d.category]).textContent = d.pct.toFixed(1) + '%';
       });
     }
 
@@ -146,3 +155,5 @@
       loadMetrics();
     });
   </script>
+</body>
+</html>
