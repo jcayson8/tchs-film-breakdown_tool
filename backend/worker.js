@@ -1,3 +1,5 @@
+// backend/worker.js
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -5,13 +7,14 @@ import chokidar from 'chokidar';
 import { Client } from 'pg';
 import { analyzeClip } from './analysis.js';
 
-// ── Pre-deploy guard must come *after* imports ──
+// Pre-deploy guard (must come *after* imports)
 if (process.env.RENDER_PRE_DEPLOY) {
   console.log('⚡️ Pre-deploy check, exiting 0');
   process.exit(0);
 }
 
-(async function main() {
+// Wrap everything in a single async function
+async function main() {
   const DATA_DIR     = process.env.DATA_DIR     || '/data';
   const DATABASE_URL = process.env.DATABASE_URL;
   if (!DATABASE_URL) {
@@ -30,13 +33,17 @@ if (process.env.RENDER_PRE_DEPLOY) {
   }
 
   // Ensure /data exists
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-  // DEBUG: list everything in /data at startup
- try {
-  const files = fs.readdirSync(DATA_DIR);
-  console.log('🔍 Files currently in DATA_DIR:', files);
- } catch(e) {
-  console.error('⚠️ Could not read DATA_DIR:', e);
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+
+  // DEBUG: list current files in DATA_DIR
+  try {
+    const files = fs.readdirSync(DATA_DIR);
+    console.log('🔍 Files currently in DATA_DIR:', files);
+  } catch (e) {
+    console.error('⚠️ Could not read DATA_DIR:', e);
+  }
 
   // Watch for new MP4s
   const watcher = chokidar.watch(DATA_DIR, {
@@ -61,9 +68,17 @@ if (process.env.RENDER_PRE_DEPLOY) {
               pass_type, completed)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
           [
-            p.team, path.basename(filePath), p.startTime, p.endTime,
-            p.offenseFormation, p.defenseFormation, p.blitz, p.coverage,
-            p.runDirection, p.passType, p.completed
+            p.team,
+            path.basename(filePath),
+            p.startTime,
+            p.endTime,
+            p.offenseFormation,
+            p.defenseFormation,
+            p.blitz,
+            p.coverage,
+            p.runDirection,
+            p.passType,
+            p.completed
           ]
         );
       }
@@ -71,7 +86,7 @@ if (process.env.RENDER_PRE_DEPLOY) {
 
       // Move processed clip
       const doneDir = path.join(DATA_DIR, 'processed');
-      if (!fs.existsSync(doneDir)) fs.mkdirSync(doneDir);
+      if (!fs.existsSync(doneDir)) fs.mkdirSync(doneDir, { recursive: true });
       fs.renameSync(filePath, path.join(doneDir, path.basename(filePath)));
       console.log(`✔ Moved clip to /data/processed`);
     } catch (err) {
@@ -83,6 +98,12 @@ if (process.env.RENDER_PRE_DEPLOY) {
 
   console.log(`🎬 Worker watching for new clips in ${DATA_DIR}`);
 
-  // keep alive
+  // Keep the process alive indefinitely
   setInterval(() => {}, 1000 * 60 * 60);
-})();
+}
+
+// Start the worker
+main().catch(err => {
+  console.error('Fatal error in worker:', err);
+  process.exit(1);
+});
