@@ -1,5 +1,3 @@
-// backend/server.js
-
 import express from 'express';
 import multer  from 'multer';
 import path    from 'path';
@@ -17,22 +15,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ─── Serve Static UI ───────────────────────────────────────────
+// Serve Static UI
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 app.get('/*', (_req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-// ─── API: Health Check ─────────────────────────────────────────
+// Health Check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// ─── API: Upload Clips ──────────────────────────────────────────
+// Upload Clips
 const DATA_DIR = '/data';
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
 const storage = multer.diskStorage({
   destination: (_req, file, cb) => cb(null, DATA_DIR),
   filename:    (_req, file, cb) => cb(null, `${Date.now()}_${file.originalname}`)
@@ -44,13 +41,13 @@ app.post('/api/upload', upload.array('files'), (req, res) => {
   res.json({ uploaded: req.files.map(f => f.filename) });
 });
 
-// ─── Start Express Server ──────────────────────────────────────
+// Start Express
 const PORT = parseInt(process.env.PORT, 10) || 8080;
 app.listen(PORT, () => {
   console.log(`✅ Server listening on port ${PORT}`);
 });
 
-// ─── Embedded Watcher & DB Logic ───────────────────────────────
+// Embedded Watcher & DB Logic
 (async function main() {
   const DATABASE_URL = process.env.DATABASE_URL;
   if (!DATABASE_URL) {
@@ -93,7 +90,7 @@ app.listen(PORT, () => {
     return;
   }
 
-  // List any existing clips
+  // List existing clips
   try {
     const existing = fs.readdirSync(DATA_DIR);
     console.log('🔍 Existing files in /data:', existing);
@@ -150,9 +147,7 @@ app.listen(PORT, () => {
     }
   });
 
-  watcher.on('error', err => {
-    console.error('Watcher error:', err);
-  });
+  watcher.on('error', err => console.error('Watcher error:', err));
 
   console.log(`🎬 Worker watching for new clips in ${DATA_DIR}`);
 })();
