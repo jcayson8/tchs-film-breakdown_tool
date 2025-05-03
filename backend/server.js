@@ -41,6 +41,8 @@ app.post('/api/upload', upload.array('files'), (req, res) => {
   res.json({ uploaded: req.files.map(f => f.filename) });
 });
 
+// API: Plays and Metrics will be added later
+
 // Start Express
 const PORT = parseInt(process.env.PORT, 10) || 8080;
 app.listen(PORT, () => {
