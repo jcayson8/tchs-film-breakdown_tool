@@ -1,3 +1,10 @@
+// backend/worker.js
++// Exit immediately during Render's pre-deploy health check
++if (process.env.RENDER_PRE_DEPLOY) {
++  console.log('⚡️ Pre-deploy check, exiting 0');
++  process.exit(0);
++}
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
