@@ -1,85 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<title>TCHS Football Film Breakdown Tool</title>
-<style>
-:root{--navy:#002147;--orange:#FF6B00;}
-*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}
-body{display:flex;height:100vh;background:#F6F7FA;}
-.sidebar{width:240px;background:var(--navy);color:#fff;flex-shrink:0;}
-.sidebar img{height:64px;display:block;margin:24px auto;}
-.sidebar ul{list-style:none;padding:0;}
-.sidebar li{padding:16px;cursor:pointer;transition:.2s;text-align:center;}
-.sidebar li.active,.sidebar li:hover{background:rgba(255,255,255,0.1);}
-.main{flex:1;padding:32px;overflow:auto;}
-h1{color:var(--navy);margin-bottom:24px;}
-.upload-box{border:2px dashed #ccc;border-radius:8px;padding:40px;text-align:center;background:#fff;cursor:pointer;}
-.upload-box.drag{border-color:var(--orange);}
-.file-list{margin-top:16px;}
-.file-item{background:#fff;border:1px solid #ddd;border-radius:4px;padding:8px;margin-bottom:8px;}
-.hidden{display:none;}
-</style>
+  <meta charset="UTF-8"/>
+  <title>TCHS Football Film Breakdown Tool</title>
+  <style>
+    :root{--navy:#002147;--orange:#FF6B00;}
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+    body{display:flex;height:100vh;background:#F6F7FA}
+    .sidebar{width:240px;background:var(--navy);color:#fff;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:24px}
+    .sidebar img{height:64px;margin-bottom:32px}
+    .sidebar ul{list-style:none;width:100%}
+    .sidebar li{padding:16px;text-align:left;cursor:pointer;transition:.2s}
+    .sidebar li.active,.sidebar li:hover{background:rgba(255,255,255,0.1)}
+    .main{flex:1;padding:32px;overflow-y:auto}
+    h1{color:var(--navy);margin-bottom:24px;font-size:32px}
+    .upload-box{border:2px dashed #ccc;border-radius:8px;padding:40px;text-align:center;background:#fff;cursor:pointer;transition:.2s}
+    .upload-box.drag{border-color:var(--orange)}
+    .file-list{margin-top:16px}
+    .file-row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #ddd;border-radius:4px;padding:8px;margin-bottom:8px}
+    .progress-container{width:60%}
+    .progress-bar{height:8px;background:var(--orange);width:0;border-radius:4px;transition:width .3s}
+    .progress-bg{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-top:4px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:24px}
+    .card{background:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08);padding:24px}
+    .card h2{font-size:18px;color:var(--navy);margin-bottom:12px}
+    .row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:16px}
+    .row .v{color:var(--orange);font-weight:600}
+    .hidden{display:none}
+  </style>
 </head>
 <body>
-<aside class="sidebar">
-  <img src="Logo.PNG" alt="TC Bulldogs"/>
-  <ul>
-    <li class="active" data-tab="upload">Upload Clips</li>
-    <li data-tab="play">Play Table</li>
-    <li data-tab="offense">Offense</li>
-    <li data-tab="defense">Defense</li>
-  </ul>
-</aside>
-<main class="main">
-  <section id="upload">
-    <h1>Upload Clips</h1>
-    <div id="uBox" class="upload-box">Drag & drop MP4s or click to select</div>
-    <input id="fileInput" type="file" accept=".mp4" multiple hidden/>
-    <div id="fileList" class="file-list"></div>
-  </section>
+  <aside class="sidebar">
+    <img src="Logo.PNG" alt="TC Bulldogs"/>
+    <ul>
+      <li class="active" data-tab="upload">Upload Clips</li>
+      <li data-tab="play">Play Table</li>
+      <li data-tab="offense">Offense</li>
+      <li data-tab="defense">Defense</li>
+    </ul>
+  </aside>
 
-  <section id="play" class="hidden">
-    <h1>Play Table</h1>
-    <p>(Data grid appears here after processing)</p>
-  </section>
+  <main class="main">
+    <!-- Upload Clips -->
+    <section id="upload">
+      <h1>Upload Clips</h1>
+      <div id="uBox" class="upload-box">
+        Drag &amp; drop MP4 files here or click to select
+      </div>
+      <input id="fileInput" type="file" accept=".mp4" multiple hidden/>
+      <div id="fileList" class="file-list"></div>
+    </section>
 
-  <section id="offense" class="hidden">
-    <h1>Offense</h1>
-    <p>(Offense metrics appear here)</p>
-  </section>
+    <!-- Play Table placeholder -->
+    <section id="play" class="hidden">
+      <h1>Play Table</h1>
+      <p>(Data grid appears here after processing)</p>
+    </section>
 
-  <section id="defense" class="hidden">
-    <h1>Defense</h1>
-    <p>(Defense metrics appear here)</p>
-  </section>
-</main>
-<script>
-const tabs = document.querySelectorAll('.sidebar li');
-tabs.forEach(tab => tab.onclick = () => {
-  tabs.forEach(t=>t.classList.remove('active'));
-  tab.classList.add('active');
-  document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));
-  document.getElementById(tab.dataset.tab).classList.remove('hidden');
-});
-const uBox = document.getElementById('uBox');
-const fileInput = document.getElementById('fileInput');
-const fileList = document.getElementById('fileList');
-uBox.onclick = ()=> fileInput.click();
-['dragenter','dragover'].forEach(e=>uBox.addEventListener(e, ev=>{ev.preventDefault(); uBox.classList.add('drag')}));
-['dragleave','drop'].forEach(e=>uBox.addEventListener(e, ev=>{ev.preventDefault(); uBox.classList.remove('drag')}));
-uBox.addEventListener('drop', ev=>{ev.preventDefault(); handleFiles(ev.dataTransfer.files); });
-fileInput.onchange = ev=> handleFiles(ev.target.files);
-function handleFiles(files){
-  Array.from(files).forEach(file=>{
-    const div = document.createElement('div');
-    div.className='file-item';
-    div.textContent = file.name;
-    fileList.appendChild(div);
-    const fd = new FormData(); fd.append('files', file);
-    fetch('/api/upload',{method:'POST',body:fd});
-  });
-}
-</script>
+    <!-- Offense dashboard -->
+    <section id="offense" class="hidden">
+      <h1>Offense</h1>
+      <div class="grid">
+        <div class="card">
+          <h2>Offensive Formation %</h2>
+          <div class="row"><span>Trio Right</span><span class="v" id="ofTrioRt">—</span></div>
+          <div class="row"><span>Trio Left</span><span class="v" id="ofTrioLt">—</span></div>
+          <div class="row"><span>Spread</span><span class="v" id="ofSpread">—</span></div>
+          <div class="row"><span>I-Formation</span><span class="v" id="ofIForm">—</span></div>
+        </div>
+        <div class="card">
+          <h2>Play Call %</h2>
+          <div class="row"><span>Outside Zone</span><span class="v" id="pcOZ">—</span></div>
+          <div class="row"><span>Screen</span><span class="v" id="pcScreen">—</span></div>
+          <div class="row"><span>Four Verts</span><span class="v" id="pcVerts">—</span></div>
+        </div>
+        <div class="card">
+          <h2>Play Direction %</h2>
+          <div class="row"><span>Left</span><span class="v" id="dirLeft">—</span></div>
+          <div class="row"><span>Right</span><span class="v" id="dirRight">—</span></div>
+        </div>
+        <div class="card">
+          <h2>Advanced Metrics</h2>
+          <div class="row"><span>Deep Throws</span><span class="v" id="advDeep">—</span></div>
+          <div class="row"><span>Short Throws</span><span class="v" id="advShort">—</span></div>
+          <div class="row"><span>Run %</span><span class="v" id="advRun">—</span></div>
+        </div>
+        <div class="card">
+          <h2>Completion Rates</h2>
+          <div class="row"><span>Deep Throw Comp %</span><span class="v" id="cmpDeep">—</span></div>
+          <div class="row"><span>Short Throw Comp %</span><span class="v" id="cmpShort">—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Defense dashboard -->
+    <section id="defense" class="hidden">
+      <h1>Defense</h1>
+      <div class="grid">
+        <div class="card">
+          <h2>Defense Type %</h2>
+          <div class="row"><span>4-3</span><span class="v" id="dType43">—</span></div>
+          <div class="row"><span>3-3</span><span class="v" id="dType33">—</span></div>
+          <div class="row"><span>Blitz (All)</span><span class="v" id="dBlitzAll">—</span></div>
+        </div>
+        <div class="card">
+          <h2>Blitz Tendencies</h2>
+          <div class="row"><span>Blitz %</span><span class="v" id="dBlitzPct">—</span></div>
+        </div>
+        <div class="card">
+          <h2>Coverage %</h2>
+          <div class="row"><span>Man</span><span class="v" id="dCovMan">—</span></div>
+          <div class="row"><span>Zone</span><span class="v" id="dCovZone">—</span></div>
+        </div>
+        <div class="card">
+          <h2>Advanced Metrics</h2>
+          <div class="row"><span>Primary Man Cov</span><span class="v" id="dAdvMan">—</span></div>
+          <div class="row"><span>Primary Zone Cov</span><span class="v" id="dAdvZone">—</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // TAB NAVIGATION
+    document.querySelectorAll('.sidebar li').forEach(tab => {
+      tab.onclick = () => {
+        document.querySelectorAll('.sidebar li').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));
+        document.getElementById(tab.dataset.tab).classList.remove('hidden');
+      };
+    });
+
+    // UPLOAD & PROGRESS
+    const uBox = document.getElementById('uBox');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    uBox.onclick = ()=> fileInput.click();
+    ['dragenter','dragover'].forEach(e => uBox.addEventListener(e, ev => {ev.preventDefault(); uBox.classList.add('drag');}));
+    ['dragleave','drop'].forEach(e => uBox.addEventListener(e, ev => {ev.preventDefault(); uBox.classList.remove('drag');}));
+    uBox.addEventListener('drop', ev => { ev.preventDefault(); handleFiles(ev.dataTransfer.files); });
+    fileInput.addEventListener('change', ev => handleFiles(ev.target.files));
+
+    function handleFiles(files){
+      Array.from(files).forEach(file => {
+        // file row
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        row.innerHTML = `
+          <span>${file.name}</span>
+          <div class="progress-container">
+            <div class="progress-bg"><div class="progress-bar"></div></div>
+          </div>`;
+        fileList.appendChild(row);
+
+        // upload + processing
+        const bar = row.querySelector('.progress-bar');
+        const form = new FormData();
+        form.append('files', file);
+        fetch('/api/upload',{method:'POST',body:form})
+          .then(r=>r.json())
+          .then(() => {
+            // simulate processing progress if real SSE isn’t hooked yet
+            let pct=0;
+            const iv = setInterval(()=>{
+              pct+=10; bar.style.width = pct+'%';
+              if(pct>=100) clearInterval(iv);
+            }, 300);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
