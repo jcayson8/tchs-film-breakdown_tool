@@ -7,10 +7,18 @@
 
 import fs from 'fs';
 import path from 'path';
++import fs from 'fs';
++import path from 'path';
 import { fileURLToPath } from 'url';
 import chokidar from 'chokidar';
 import { Client } from 'pg';
 import { analyzeClip } from './analysis.js';
+
++// During Render’s pre-deploy health check, exit immediately:
++if (process.env.RENDER_PRE_DEPLOY) {
++  console.log('⚡️ Pre-deploy check, exiting 0');
++  process.exit(0);
++}
 
 // Resolve __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
