@@ -1,34 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
 <title>TCHS Football Film Breakdown Tool</title>
 <style>
 :root{--navy:#002147;--orange:#FF6B00;}
-*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}
-body{display:flex;height:100vh;background:#F6F7FA;}
-.sidebar{width:240px;background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;padding-top:24px;}
-.sidebar img{height:64px;margin-bottom:32px;}
-.sidebar ul{list-style:none;width:100%;}
-.sidebar li{padding:16px 24px;cursor:pointer;transition:background .2s;}
-.sidebar li.active,.sidebar li:hover{background:rgba(255,255,255,0.1);}
-.main{flex:1;padding:32px;overflow-y:auto;}
-h1{color:var(--navy);margin-bottom:24px;font-size:32px;}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:24px;}
-.card{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px;}
-.card h2{margin-bottom:12px;color:var(--navy);}
-.row{display:flex;justify-content:space-between;margin-bottom:8px;}
-.row .v{color:var(--orange);font-weight:bold;}
-.hidden{display:none;}
-.upload-box{border:2px dashed #ccc;border-radius:8px;padding:40px;text-align:center;background:#fff;cursor:pointer;}
-.upload-box.drag{border-color:var(--orange);}
-.file-list{margin-top:16px;}
-.file-item{background:#fff;border:1px solid #ddd;border-radius:4px;padding:8px;margin-bottom:8px;}
-</style>
-</head>
-<body>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{display:flex;height:100vh;background:#F6F7FA}
+.sidebar{width:240px;background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;padding-top:24px}
+.sidebar img{height:64px;margin-bottom:36px}
+.sidebar ul{list-style:none;width:100%}
+.sidebar li{padding:15px 24px;cursor:pointer;transition:.2s}
+.sidebar li.active,.sidebar li:hover{background:rgba(255,255,255,.18)}
+.main{flex:1;padding:40px 48px;overflow-y:auto}
+h1{color:var(--navy);margin-bottom:24px;font-size:34px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:26px}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08);padding:24px}
+.card h2{font-size:18px;color:var(--navy);margin-bottom:14px}
+.row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:16px}
+.row .v{color:var(--orange);font-weight:600}
+.hidden{display:none}
+.upload-box{border:2px dashed #bbb;padding:50px;text-align:center;border-radius:12px;background:#fff;cursor:pointer;transition:.2s}
+.upload-box.drag{border-color:var(--orange)}
+.barwrap{height:6px;background:#ddd;border-radius:3px;margin-top:6px;overflow:hidden}
+.bar{height:100%;width:0;background:var(--orange);transition:width .3s}
+.fileRow{margin-top:12px;font-size:14px}
+</style></head><body>
+
 <aside class="sidebar">
-  <img src="Logo.PNG" alt="TC Bulldogs"/>
+  <img src="Logo.PNG" alt="TC Bulldogs">
   <ul>
     <li class="active" data-tab="upload">Upload Clips</li>
     <li data-tab="play">Play Table</li>
@@ -36,63 +33,54 @@ h1{color:var(--navy);margin-bottom:24px;font-size:32px;}
     <li data-tab="defense">Defense</li>
   </ul>
 </aside>
+
 <main class="main">
 <section id="upload">
-  <h1>Upload Clips</h1>
-  <div id="uBox" class="upload-box">Drag & drop MP4 files here or click to select</div>
-  <input id="fileInput" type="file" accept=".mp4" multiple hidden/>
-  <div id="fileList" class="file-list"></div>
+ <h1>Upload Clips</h1>
+ <label style="font-size:15px;">Team 
+   <select id="teamSel" style="padding:4px 6px;">
+     <option value="Default Team" selected>Default Team</option>
+   </select>
+   <button id="newTeamBtn" style="margin-left:8px;padding:4px 8px;background:var(--orange);color:#fff;border:none;border-radius:4px;cursor:pointer">+ New Team</button>
+ </label>
+ <br><br>
+ <div id="uBox" class="upload-box">
+   <p>Drag & drop MP4 files here or click to select</p>
+   <input id="fileInput" type="file" accept=".mp4" multiple hidden>
+ </div>
+ <div id="queue"></div>
 </section>
-<section id="play" class="hidden"><h1>Play Table</h1><p>(Data grid appears here)</p></section>
-<section id="offense" class="hidden">
-  <h1>Offense</h1>
-  <div class="grid">
-    <div class="card"><h2>Offensive Formation %</h2>
-      <div class="row"><span>Trips Rt</span><span class="v">—</span></div>
-      <div class="row"><span>Trips Lt</span><span class="v">—</span></div>
-      <div class="row"><span>Spread</span><span class="v">—</span></div>
-      <div class="row"><span>I-Form</span><span class="v">—</span></div>
-    </div>
-  </div>
+
+<section id="play" class="hidden"><h1>Play Table</h1><p>(Data grid will appear here)</p></section>
+
+<section id="offense" class="hidden"><h1>Offense</h1>
+ <div class="grid">
+  <div class="card"><h2>Offensive Formation %</h2>
+   <div class="row"><span>Trips Rt</span><span class="v">—</span></div>
+   <div class="row"><span>Trips Lt</span><span class="v">—</span></div>
+   <div class="row"><span>Spread</span><span class="v">—</span></div>
+   <div class="row"><span>I-Form</span><span class="v">—</span></div></div>
+ </div>
 </section>
-<section id="defense" class="hidden">
-  <h1>Defense</h1>
-  <div class="grid">
-    <div class="card"><h2>Blitz by Down %</h2>
-      <div class="row"><span>1st Down</span><span class="v">—</span></div>
-      <div class="row"><span>2nd Down</span><span class="v">—</span></div>
-      <div class="row"><span>3rd Down</span><span class="v">—</span></div>
-      <div class="row"><span>4th Down</span><span class="v">—</span></div>
-    </div>
-  </div>
+
+<section id="defense" class="hidden"><h1>Defense</h1>
+ <div class="grid">
+  <div class="card"><h2>Blitz by Down %</h2>
+   <div class="row"><span>1st Down</span><span class="v">—</span></div>
+   <div class="row"><span>2nd Down</span><span class="v">—</span></div>
+   <div class="row"><span>3rd Down</span><span class="v">—</span></div>
+   <div class="row"><span>4th Down</span><span class="v">—</span></div></div>
+ </div>
 </section>
 </main>
+
 <script>
-const tabs = document.querySelectorAll('.sidebar li');
-tabs.forEach(tab => tab.addEventListener('click', () => {
-  tabs.forEach(t => t.classList.remove('active'));
-  tab.classList.add('active');
-  document.querySelectorAll('main>section').forEach(sec => sec.classList.add('hidden'));
-  document.getElementById(tab.dataset.tab).classList.remove('hidden');
-}));
-const uBox = document.getElementById('uBox');
-const fileInput = document.getElementById('fileInput');
-const fileList = document.getElementById('fileList');
-uBox.addEventListener('click', () => fileInput.click());
-['dragenter','dragover'].forEach(e => uBox.addEventListener(e, ev => { ev.preventDefault(); uBox.classList.add('drag'); }));
-['dragleave','drop'].forEach(e => uBox.addEventListener(e, ev => { ev.preventDefault(); uBox.classList.remove('drag'); }));
-uBox.addEventListener('drop', ev => { ev.preventDefault(); handleFiles(ev.dataTransfer.files); });
-fileInput.addEventListener('change', ev => handleFiles(ev.target.files));
-function handleFiles(files) {
-  Array.from(files).forEach(file => {
-    const item = document.createElement('div');
-    item.className = 'file-item';
-    item.textContent = file.name;
-    fileList.appendChild(item);
-    const form = new FormData(); form.append('files', file);
-    fetch('/api/upload', { method: 'POST', body: form });
-  });
-}
+document.querySelectorAll(".sidebar li").forEach(li=>{ li.onclick=()=>{ document.querySelectorAll(".sidebar li").forEach(i=>i.classList.remove("active")); li.classList.add("active"); document.querySelectorAll("main>section").forEach(s=>s.classList.add("hidden")); document.getElementById(li.dataset.tab).classList.remove("hidden"); } });
+document.getElementById('newTeamBtn').onclick=()=>{ const name=prompt("Team name?"); if(name){ const opt=document.createElement('option'); opt.textContent=name; opt.value=name; document.getElementById('teamSel').appendChild(opt); document.getElementById('teamSel').value=name; } };
+const uBox=document.getElementById('uBox'), inp=document.getElementById('fileInput'), queue=document.getElementById('queue');
+uBox.onclick=()=>inp.click(); ['dragenter','dragover'].forEach(ev=>uBox.addEventListener(ev,e=>{e.preventDefault();uBox.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>uBox.addEventListener(ev,e=>{e.preventDefault();uBox.classList.remove('drag')}));
+uBox.addEventListener('drop',e=>{e.preventDefault();handle([...e.dataTransfer.files])}); inp.onchange=e=>handle([...inp.files]);
+function handle(files){ files.forEach(f=>{ const row=document.createElement('div'); row.className="fileRow"; row.innerHTML=`${f.name}<div class="barwrap"><div class="bar"></div></div>`; const bar=row.querySelector('.bar'); queue.appendChild(row); const fd=new FormData(); fd.append('files',f); fetch('/api/upload',{method:'POST',body:fd}).then(r=>{ if(r.ok) bar.style.width='100%'; }); }); }
 </script>
-</body>
-</html>
+</body></html>
