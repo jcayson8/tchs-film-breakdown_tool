@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import {fileURLToPath} from 'url';
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,20 +14,18 @@ const DATA_DIR = '/data';
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
 const storage = multer.diskStorage({
-  destination: (req,file,cb)=>cb(null, DATA_DIR),
-  filename: (req,file,cb)=>cb(null, Date.now() + '_' + file.originalname)
+  destination: (req,file,cb) => cb(null, DATA_DIR),
+  filename: (req,file,cb) => cb(null, Date.now() + '_' + file.originalname)
 });
-const upload = multer({ storage });
+const upload = multer({storage});
 
 app.use(express.static(path.join(__dirname,'public')));
 
-app.get('/api/health', (_,res)=>res.json({status:'ok'}));
-
-app.post('/api/upload', upload.array('files'), (req,res)=>{
-  console.log('Uploaded', req.files.length);
+app.get('/api/health', (_,res) => res.json({status:'ok'}));
+app.post('/api/upload', upload.array('files'), (req,res) => {
+  console.log('Uploaded', req.files.length, 'clip(s)');
   res.sendStatus(200);
 });
+app.get('*', (_,res) => res.sendFile(path.join(__dirname,'public','index.html')));
 
-app.get('*', (_,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-
-app.listen(PORT, ()=>console.log('Running on', PORT));
+app.listen(PORT, () => console.log('Server running on', PORT));
