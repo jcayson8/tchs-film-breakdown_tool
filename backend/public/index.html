@@ -42,36 +42,107 @@
       <li data-tab="defense">Defense</li>
     </ul>
   </aside>
-
   <main class="main">
     <section id="upload">
       <h1>Upload Clips</h1>
-      <div id="uBox" class="upload-box">Drag &amp; drop MP4 files or click to select</div>
+      <div id="uBox" class="upload-box">Drag &amp; drop MP4 files here or click to select</div>
       <input id="fileInput" type="file" accept=".mp4" multiple hidden/>
       <div id="fileList" class="file-list"></div>
     </section>
-
     <section id="play" class="hidden">
       <h1>Play Table</h1>
       <table id="playTable"></table>
     </section>
-
     <section id="offense" class="hidden">
       <h1>Offense</h1>
       <div class="grid">
-        <!-- Cards for Offensive metrics -->
-        <div class="card">
-          <h2>Offensive Formation %</h2>
-          <div class="row"><span>Trio Right</span><span class="v" id="ofTrioRt">—</span></div>
-          <div class="row"><span>Trio Left</span><span class="v" id="ofTrioLt">—</span></div>
-          <div class="row"><span>Spread</span><span class="v" id="ofSpread">—</span></div>
-          <div class="row"><span>I-Formation</span><span class="v" id="ofIForm">—</span></div>
-        </div>
-        <div class="card">
-          <h2>Play Call %</h2>
-          <div class="row"><span>Outside Zone</span><span class="v" id="pcOZ">—</span></div>
-          <div class="row"><span>Screen</span><span class="v" id="pcScreen">—</span></div>
-          <div class="row"><span>Four Verts</span><span class="v" id="pcVerts">—</span></div>
-        </div>
-        <div class="card">
-          <h2>Play Direction %</n
+        <!-- Offense cards… -->
+      </div>
+    </section>
+    <section id="defense" class="hidden">
+      <h1>Defense</h1>
+      <div class="grid">
+        <!-- Defense cards… -->
+      </div>
+    </section>
+  </main>
+  <script>
+    // Tab navigation
+    document.querySelectorAll('.sidebar li').forEach(tab => {
+      tab.onclick = () => {
+        document.querySelectorAll('.sidebar li').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('main>section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(tab.dataset.tab).classList.remove('hidden');
+      };
+    });
+
+    // Upload & drag-and-drop
+    const uBox = document.getElementById('uBox');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    uBox.onclick = () => fileInput.click();
+    ['dragenter','dragover'].forEach(e => uBox.addEventListener(e, ev => { ev.preventDefault(); uBox.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(e => uBox.addEventListener(e, ev => { ev.preventDefault(); uBox.classList.remove('drag'); }));
+    uBox.addEventListener('drop', ev => { ev.preventDefault(); handleFiles(ev.dataTransfer.files); });
+    fileInput.addEventListener('change', ev => handleFiles(ev.target.files));
+
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        row.innerHTML = `
+          <span>${file.name}</span>
+          <div class="progress-container">
+            <div class="progress-bg"><div class="progress-bar"></div></div>
+          </div>`;
+        fileList.appendChild(row);
+        const bar = row.querySelector('.progress-bar');
+        const form = new FormData(); form.append('files', file);
+        fetch('/api/upload', { method:'POST', body: form })
+          .then(r=>r.json())
+          .then(() => {
+            let pct = 0;
+            const iv = setInterval(() => {
+              pct += 10; bar.style.width = pct+'%';
+              if (pct >= 100) clearInterval(iv);
+            }, 300);
+          });
+      });
+    }
+
+    // Load plays
+    async function loadPlays() {
+      const res = await fetch('/api/plays');
+      const plays = await res.json();
+      const table = document.getElementById('playTable');
+      table.innerHTML = `
+        <tr><th>ID</th><th>Team</th><th>Off Form</th><th>Def Form</th>
+        <th>Blitz</th><th>Coverage</th><th>Run Dir</th>
+        <th>Pass</th><th>Comp</th></tr>` +
+        plays.map(p => 
+          `<tr><td>${p.id}</td><td>${p.team}</td>` +
+          `<td>${p.offense_formation}</td><td>${p.defense_formation}</td>` +
+          `<td>${p.blitz}</td><td>${p.coverage}</td>` +
+          `<td>${p.run_direction}</td><td>${p.pass_type}</td>` +
+          `<td>${p.completed}</td></tr>`
+        ).join('');
+    }
+
+    // Load basic metrics (example)
+    async function loadMetrics() {
+      const res = await fetch('/api/metrics');
+      const { formations } = await res.json();
+      formations.forEach(f => {
+        const idMap = { 'Spread':'ofSpread','I-Formation':'ofIForm',
+          'Trio Right':'ofTrioRt','Trio Left':'ofTrioLt' };
+        const el = document.getElementById(idMap[f.category]);
+        if (el) el.textContent = f.pct.toFixed(1) + '%';
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPlays();
+      loadMetrics();
+    });
+  </script>
