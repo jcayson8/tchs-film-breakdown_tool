@@ -1,21 +1,29 @@
+# render.yaml — drops the entire app, worker, disk & database in one go
+services:
+  - type: web_service
+    name: tchs-film-prod
+    env: docker
+    branch: main
+    dockerfilePath: Dockerfile
+    startCommand: node backend/server.js
+    diskMounts:
+      - diskName: media-disk
+        mountPath: /data
 
-3. Commit the change.
+  - type: background_worker
+    name: tchs-film-worker
+    env: docker
+    branch: main
+    dockerfilePath: Dockerfile
+    startCommand: node backend/worker.js
+    diskMounts:
+      - diskName: media-disk
+        mountPath: /data
 
----
+databases:
+  - name: tchs-film-db
+    plan: starter
 
-### 2) Trigger a fresh install on Render
-
-1. Go to your **tchs-film-worker** (or web service if you install there) in Render.  
-2. Click **Manual Deploy → Clear cache & deploy**.  
-3. During the build you’ll see `npm install` pull in chokidar alongside your other packages.
-
----
-
-That’s it—once Render rebuilds, your `worker.js` import of chokidar will resolve and your watcher will run as expected.
-
-> **Locally** (if you ever do want to test on your machine), you can run:
-> ```bash
-> cd backend
-> npm install chokidar
-> ```
-> but it’s not required for your Render deployment.
+disks:
+  - name: media-disk
+    sizeGB: 50
