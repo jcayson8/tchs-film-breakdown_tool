@@ -31,6 +31,12 @@ if (process.env.RENDER_PRE_DEPLOY) {
 
   // Ensure /data exists
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+  // DEBUG: list everything in /data at startup
+ try {
+  const files = fs.readdirSync(DATA_DIR);
+  console.log('🔍 Files currently in DATA_DIR:', files);
+ } catch(e) {
+  console.error('⚠️ Could not read DATA_DIR:', e);
 
   // Watch for new MP4s
   const watcher = chokidar.watch(DATA_DIR, {
