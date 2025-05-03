@@ -17,13 +17,13 @@
 export async function analyzeClip(filePath) {
   // TODO: replace this stub with your actual pipeline call
   // e.g. spawn a Python script or invoke a TensorFlow.js model
-  console.log(`🔎 Analyzing clip: ${filePath}`);
+  console.log(`🔎 (stub) analyzing ${filePath}`);
   
   // dummy single-play example
   return [{
     team: 'Default Team',
     startTime: 0.0,
-    endTime: 3.2,
+    endTime: 1.0,
     offenseFormation: 'Spread',
     defenseFormation: '4-3',
     blitz: false,
