@@ -1,4 +1,3 @@
-// backend/worker.js
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 (async function main() {
-  const DATA_DIR     = process.env.DATA_DIR      || '/data';
+  const DATA_DIR     = process.env.DATA_DIR     || '/data';
   const DATABASE_URL = process.env.DATABASE_URL;
   if (!DATABASE_URL) {
     console.error('❌ DATABASE_URL not set');
@@ -41,9 +40,11 @@ const __dirname  = path.dirname(__filename);
   watcher.on('add', async (filePath) => {
     if (!filePath.toLowerCase().endsWith('.mp4')) return;
     console.log(`▶ Detected new clip: ${filePath}`);
+
     try {
       const plays = await analyzeClip(filePath);
       console.log(`↳ Extracted ${plays.length} plays`);
+
       for (const p of plays) {
         await db.query(
           `INSERT INTO plays
@@ -59,7 +60,8 @@ const __dirname  = path.dirname(__filename);
         );
       }
       console.log(`☑ Wrote ${plays.length} rows to DB`);
-      // move processed file
+
+      // Move processed clip
       const doneDir = path.join(DATA_DIR, 'processed');
       if (!fs.existsSync(doneDir)) fs.mkdirSync(doneDir);
       fs.renameSync(filePath, path.join(doneDir, path.basename(filePath)));
@@ -69,17 +71,11 @@ const __dirname  = path.dirname(__filename);
     }
   });
 
-  watcher.on('error', err => {
-    console.error('Watcher error:', err);
-  });
+  watcher.on('error', err => console.error('Watcher error:', err));
 
   console.log(`🎬 Worker watching for new clips in ${DATA_DIR}`);
 
-  // !!! KEEP THE PROCESS ALIVE !!!
-  // This prevents Node from exiting when idle.
-  process.stdin.resume();
-
-  // Optional: log uncaught exceptions/rejections
-  process.on('unhandledRejection', err => console.error('UnhandledRejection:', err));
-  process.on('uncaughtException', err => console.error('UncaughtException:', err));
+  // ─── KEEP THE PROCESS ALIVE ───────────────────────────────
+  // This timer never fires, but it prevents Node from exiting.
+  setInterval(() => {}, 1000 * 60 * 60);
 })();
