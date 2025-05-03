@@ -1,28 +1,15 @@
-// backend/worker.js
-+// Exit immediately during Render's pre-deploy health check
-+if (process.env.RENDER_PRE_DEPLOY) {
-+  console.log('⚡️ Pre-deploy check, exiting 0');
-+  process.exit(0);
-+}
-
 import fs from 'fs';
 import path from 'path';
-+import fs from 'fs';
-+import path from 'path';
 import { fileURLToPath } from 'url';
 import chokidar from 'chokidar';
 import { Client } from 'pg';
 import { analyzeClip } from './analysis.js';
 
-+// During Render’s pre-deploy health check, exit immediately:
-+if (process.env.RENDER_PRE_DEPLOY) {
-+  console.log('⚡️ Pre-deploy check, exiting 0');
-+  process.exit(0);
-+}
-
-// Resolve __dirname in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
+// ── Pre-deploy guard must come *after* imports ──
+if (process.env.RENDER_PRE_DEPLOY) {
+  console.log('⚡️ Pre-deploy check, exiting 0');
+  process.exit(0);
+}
 
 (async function main() {
   const DATA_DIR     = process.env.DATA_DIR     || '/data';
@@ -90,7 +77,6 @@ const __dirname  = path.dirname(__filename);
 
   console.log(`🎬 Worker watching for new clips in ${DATA_DIR}`);
 
-  // ─── KEEP THE PROCESS ALIVE ───────────────────────────────
-  // This timer never fires, but it prevents Node from exiting.
+  // keep alive
   setInterval(() => {}, 1000 * 60 * 60);
 })();
