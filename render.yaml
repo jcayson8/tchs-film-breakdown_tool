@@ -1,4 +1,3 @@
-# render.yaml — drops the entire app, worker, disk & database in one go
 services:
   - type: web_service
     name: tchs-film-prod
