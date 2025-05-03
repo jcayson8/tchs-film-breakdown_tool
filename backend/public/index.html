@@ -1,1 +1,85 @@
-<!DOCTYPE html><html><body><h1>UI goes here</h1></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>TCHS Football Film Breakdown Tool</title>
+<style>
+:root{--navy:#002147;--orange:#FF6B00;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}
+body{display:flex;height:100vh;background:#F6F7FA;}
+.sidebar{width:240px;background:var(--navy);color:#fff;flex-shrink:0;}
+.sidebar img{height:64px;display:block;margin:24px auto;}
+.sidebar ul{list-style:none;padding:0;}
+.sidebar li{padding:16px;cursor:pointer;transition:.2s;text-align:center;}
+.sidebar li.active,.sidebar li:hover{background:rgba(255,255,255,0.1);}
+.main{flex:1;padding:32px;overflow:auto;}
+h1{color:var(--navy);margin-bottom:24px;}
+.upload-box{border:2px dashed #ccc;border-radius:8px;padding:40px;text-align:center;background:#fff;cursor:pointer;}
+.upload-box.drag{border-color:var(--orange);}
+.file-list{margin-top:16px;}
+.file-item{background:#fff;border:1px solid #ddd;border-radius:4px;padding:8px;margin-bottom:8px;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <img src="Logo.PNG" alt="TC Bulldogs"/>
+  <ul>
+    <li class="active" data-tab="upload">Upload Clips</li>
+    <li data-tab="play">Play Table</li>
+    <li data-tab="offense">Offense</li>
+    <li data-tab="defense">Defense</li>
+  </ul>
+</aside>
+<main class="main">
+  <section id="upload">
+    <h1>Upload Clips</h1>
+    <div id="uBox" class="upload-box">Drag & drop MP4s or click to select</div>
+    <input id="fileInput" type="file" accept=".mp4" multiple hidden/>
+    <div id="fileList" class="file-list"></div>
+  </section>
+
+  <section id="play" class="hidden">
+    <h1>Play Table</h1>
+    <p>(Data grid appears here after processing)</p>
+  </section>
+
+  <section id="offense" class="hidden">
+    <h1>Offense</h1>
+    <p>(Offense metrics appear here)</p>
+  </section>
+
+  <section id="defense" class="hidden">
+    <h1>Defense</h1>
+    <p>(Defense metrics appear here)</p>
+  </section>
+</main>
+<script>
+const tabs = document.querySelectorAll('.sidebar li');
+tabs.forEach(tab => tab.onclick = () => {
+  tabs.forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(tab.dataset.tab).classList.remove('hidden');
+});
+const uBox = document.getElementById('uBox');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+uBox.onclick = ()=> fileInput.click();
+['dragenter','dragover'].forEach(e=>uBox.addEventListener(e, ev=>{ev.preventDefault(); uBox.classList.add('drag')}));
+['dragleave','drop'].forEach(e=>uBox.addEventListener(e, ev=>{ev.preventDefault(); uBox.classList.remove('drag')}));
+uBox.addEventListener('drop', ev=>{ev.preventDefault(); handleFiles(ev.dataTransfer.files); });
+fileInput.onchange = ev=> handleFiles(ev.target.files);
+function handleFiles(files){
+  Array.from(files).forEach(file=>{
+    const div = document.createElement('div');
+    div.className='file-item';
+    div.textContent = file.name;
+    fileList.appendChild(div);
+    const fd = new FormData(); fd.append('files', file);
+    fetch('/api/upload',{method:'POST',body:fd});
+  });
+}
+</script>
+</body>
+</html>
