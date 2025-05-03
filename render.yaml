@@ -1,3 +1,5 @@
+version: v1
+
 services:
   - type: web_service
     name: tchs-film-prod
